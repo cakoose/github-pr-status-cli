@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+set -euo pipefail
+
+# Find the location of this script file, traversing symlinks if necessary.
+script_path="${BASH_SOURCE[0]}"
+while [[ -h "$script_path" ]]; do
+  folder_path="$(cd -P "$(dirname "$script_path")" >/dev/null 2>&1 && pwd)"
+  script_path="$(readlink "$script_path")"
+  [[ "$script_path" != /* ]] && script_path="$folder_path/$script_path"
+done
+folder_path="$(cd -P "$(dirname "$script_path")" >/dev/null 2>&1 && pwd)"
+
+exec node -r "$folder_path/.pnp.cjs" "$folder_path/dist/main.js" "$@"
