@@ -22,14 +22,12 @@ async function mainAsync(argv: Array<string>): Promise<void> {
                 type: cmdTs.optional(cmdTsTypeRe('GitHub username', githubUsernameRe)),
                 description: `The GitHub username whose PRs you want to see.  Default: "@me".`,
             }),
-            repo: cmdTs.option({
-                long: 'repo',
-                type: cmdTs.optional(cmdTsTypeRe('GitHub repo', githubRepoRe)),
-                description: `The GitHub repo whose PRs you want to see.  Default: Current Git repo's "origin" remote.`,
+            rest: cmdTs.restPositionals({
+                description: `List of orgs, repos ("Orgname/reponame"), or "."`,
             }),
         },
         handler: async args => {
-            await innerMainAsync(args.user ?? null, args.repo ?? null);
+            await innerMainAsync(args.user ?? null, args.rest);
         },
     });
     await cmdTs.run(cmd, argv.slice(2));
@@ -46,24 +44,35 @@ function cmdTsTypeRe(name: string, re: RegExp): cmdTs.Type<string, string> {
 
 const githubUsernameRe = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
 const githubRepoRe = /^([-A-Za-z0-9_.]+\/[-A-Za-z0-9_.]+)$/;
+const githubOrgRe = /^([-A-Za-z0-9_.]+)$/;
 
-async function innerMainAsync(argUser: string | null, argRepo: string | null): Promise<void> {
+async function innerMainAsync(user: string | null, rest: Array<string>): Promise<void> {
     const githubCredentialsPromise = await getGithubCredentialsAsync();
 
-    let githubRepo;
-    if (argRepo === null) {
-        const gitRepoPath = await git.findRoot({fs, filepath: process.cwd()});
-        const gitdir = pathUtil.join(gitRepoPath, '.git');
-        githubRepo = await determineGithubRepoAsync(gitdir);
-    } else {
-        githubRepo = argRepo;
+    const orgs = [];
+    const repos = [];
+
+    for (const arg of rest) {
+        if (arg === '.') {
+            const gitRepoPath = await git.findRoot({fs, filepath: process.cwd()});
+            const gitdir = pathUtil.join(gitRepoPath, '.git');
+            const repo = await determineGithubRepoAsync(gitdir);
+            repos.push(repo);
+        } else if (githubOrgRe.test(arg)) {
+            orgs.push(arg);
+        } else if (githubRepoRe.test(arg)) {
+            repos.push(arg);
+        } else {
+            console.error(`Expecting a GitHub organization name, repo string ("orgname/reponame") or "."; got "${q(arg)}.`);
+            return;
+        }
     }
 
-    const githubUsernameOrMe = (argUser === null) ? '@me' : argUser;
+    const githubUsernameOrMe = (user === null) ? '@me' : user;
     const {oauthToken} = await githubCredentialsPromise;
-    const prs = await fetcher.fetchPrsAsync(oauthToken, githubRepo, githubUsernameOrMe);
+    const prs = await fetcher.fetchPrsAsync(oauthToken, githubUsernameOrMe, repos, orgs);
 
-    renderer.render(githubRepo, prs);
+    renderer.render(prs);
 }
 
 // TODO: Other URL formats.

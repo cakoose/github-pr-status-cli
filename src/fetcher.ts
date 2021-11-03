@@ -4,12 +4,13 @@ import {q, Exit} from './cli';
 
 export async function fetchPrsAsync(
     oauthToken: string,
-    repo: string,
     usernameOrMe: string,
+    repos: Array<string>,
+    orgs: Array<string>,
 ): Promise<{authored: Array<Pr>; toReview: Array<Pr>}> {
     let response;
     try {
-        response = await axios.post(`https://api.github.com/graphql`, {query: makePrQuery(repo, usernameOrMe)}, {
+        response = await axios.post(`https://api.github.com/graphql`, {query: makePrQuery(usernameOrMe, repos, orgs)}, {
             headers: {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${oauthToken}`,
@@ -36,9 +37,16 @@ export async function fetchPrsAsync(
     return checkResult.result.data;
 }
 
-// To experiment, copy/paste this in to https://docs.github.com/en/graphql/overview/explorer
-const makePrQuery = (repo: string, usernameOrMe: string) => `
+const makePrQuery = (usernameOrMe: string, repos: Array<string>, orgs: Array<string>) => {
+    const filterParts = [];
+    filterParts.push(...repos.map(r => `repo:${r}`));
+    filterParts.push(...orgs.map(o => `org:${o}`));
+    const filter = filterParts.join(' ');
+
+    // To experiment, copy/paste this in to https://docs.github.com/en/graphql/overview/explorer
+    return `
 fragment pr on PullRequest {
+    repository {nameWithOwner}
     number, title, url, headRefName, reviewDecision,
     author {login},
     reviews(last: 100) {edges {node {
@@ -62,14 +70,15 @@ fragment pr on PullRequest {
     }}}
 }
 {
-    authored: search(query: "repo:${repo} state:open is:pr author:${usernameOrMe}", type: ISSUE, first: 100) {
+    authored: search(query: "${filter} state:open is:pr author:${usernameOrMe}", type: ISSUE, first: 100) {
         edges {node {...pr}}
     }
-    toReview: search(query: "repo:${repo} state:open is:pr review-requested:${usernameOrMe}", type: ISSUE, first: 100) {
+    toReview: search(query: "${filter} state:open is:pr review-requested:${usernameOrMe}", type: ISSUE, first: 100) {
         edges {node {...pr}}
     }
 }
 `;
+};
 
 export enum ReviewDecision {
     CHANGES_REQUESTED = 'CHANGES_REQUESTED',
@@ -116,6 +125,7 @@ function stChain<A, B>(first: st.Runtype<A>, fn: (v: A) => (B | st.Fail)): st.Ru
 //type RequestedReviewer = ReturnType<typeof requestedReviewerSchema>;
 
 const prSchema = st.record({
+    repository: st.record({nameWithOwner: st.string()}),
     number: st.integer({min: 1}),
     title: st.string(),
     url: st.string(),

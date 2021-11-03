@@ -3,16 +3,17 @@ import ansiEscapes from 'ansi-escapes';
 
 import {Pr, PrGroups, ReviewDecision} from './fetcher';
 
-export function render(githubRepo: string, prGroups: PrGroups): void {
+export function render(prGroups: PrGroups): void {
     const writePrLines = (sectionName: string, prs: Array<Pr>, renderer: PrRenderer): void => {
         console.log();
         console.log(`${chalk.whiteBright(`${sectionName}: ${prs.length}`)}`);
         for (const pr of prs) {
-            console.log(renderPrLine(pr, renderer));
+            for (const line of renderPrLines(pr, renderer)) {
+                console.log(line);
+            }
         }
     };
 
-    console.log(`${chalk.whiteBright('Repo:')} ${githubRepo}`);
     writePrLines('Authored', prGroups.authored, new AuthoredPrRenderer());
     writePrLines('To review', prGroups.toReview, new ToReviewPrRenderer());
 
@@ -52,14 +53,18 @@ function renderTestStatus(pr: Pr): string {
     return chalk.red('✗'); // Failed
 }
 
-const renderPrLine = (pr: Pr, renderer: PrRenderer): string => {
+const renderPrLines = (pr: Pr, renderer: PrRenderer): Array<string> => {
     let title = pr.title;
     if (title.length > prTitleLengthLimit) {
         title = title.substring(0, prTitleLengthLimit - 3) + '...';
     }
     const reviewStatus = renderer.renderReviewStatus(pr);
     const testStatus = renderTestStatus(pr);
-    const numberLink = ansiEscapes.link(chalk.blue(`${pr.number}`), pr.url);
-    const branch = chalk.cyan(`[${pr.headRefName}]`);
-    return `${testStatus}${reviewStatus} ${numberLink} ${title} ${branch}`;
+    const repoName = pr.repository.nameWithOwner;
+    const link = ansiEscapes.link(`${chalk.dim(repoName)}#${chalk.blue(`${pr.number}`)}`, pr.url);
+    const branch = chalk.cyan(`${pr.headRefName}`);
+    return [
+        `${testStatus}${reviewStatus} ${title}`,
+        `   ${link}, ${chalk.cyan(branch)}`,
+    ];
 };
