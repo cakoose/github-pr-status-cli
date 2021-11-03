@@ -99,6 +99,7 @@ const reviewsSchema = st.record({
 });
 //type Reviews = ReturnType<typeof reviewsSchema>;
 
+export type RequestedReviewer = ReturnType<typeof requestedReviewerSchema>;
 const requestedReviewerSchema = st.union(
     st.record({
         typename: st.literal('User'),

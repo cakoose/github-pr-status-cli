@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import ansiEscapes from 'ansi-escapes';
+import * as u from './u';
 
-import {Pr, PrGroups, ReviewDecision} from './fetcher';
+import {Pr, PrGroups, RequestedReviewer, ReviewDecision} from './fetcher';
 
 export function render(prGroups: PrGroups): void {
     const writePrLines = (sectionName: string, prs: Array<Pr>, renderer: PrRenderer): void => {
@@ -53,6 +54,15 @@ function renderTestStatus(pr: Pr): string {
     return chalk.red('✗'); // Failed
 }
 
+const renderRequestedReviewer = (rr: RequestedReviewer): string => {
+    switch (rr.typename) {
+        case 'User': return rr.login;
+        case 'Team': return `team:${rr.name}`;
+        case 'Mannequin': return `mannequin:${rr.name}`;
+        default: throw u.impossible(rr);
+    }
+}
+
 const renderPrLines = (pr: Pr, renderer: PrRenderer): Array<string> => {
     let title = pr.title;
     if (title.length > prTitleLengthLimit) {
@@ -63,8 +73,11 @@ const renderPrLines = (pr: Pr, renderer: PrRenderer): Array<string> => {
     const repoName = pr.repository.nameWithOwner;
     const link = ansiEscapes.link(`${chalk.dim(repoName)}#${chalk.blue(`${pr.number}`)}`, pr.url);
     const branch = chalk.cyan(`${pr.headRefName}`);
+    const reviewers = pr.reviewRequests.length > 0
+        ? `, ${pr.reviewRequests.map(rr => renderRequestedReviewer(rr.requestedReviewer)).join(', ')}`
+        : '';
     return [
-        `${testStatus}${reviewStatus} ${title}`,
-        `   ${link}, ${chalk.cyan(branch)}`,
+        `${testStatus}${reviewStatus} ${chalk.yellow(title)}`,
+        `   ${link}, ${chalk.cyan(branch)}${reviewers}`,
     ];
 };
