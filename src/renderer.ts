@@ -61,7 +61,7 @@ const renderRequestedReviewer = (rr: RequestedReviewer): string => {
         case 'Mannequin': return `mannequin:${rr.name}`;
         default: throw u.impossible(rr);
     }
-}
+};
 
 const renderPrLines = (pr: Pr, renderer: PrRenderer): Array<string> => {
     let title = pr.title;

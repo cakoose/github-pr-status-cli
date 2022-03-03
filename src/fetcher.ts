@@ -91,6 +91,7 @@ export enum ReviewState {
     CHANGES_REQUESTED = 'CHANGES_REQUESTED',
     APPROVED = 'APPROVED',
     PENDING = 'PENDING',
+    DISMISSED = 'DISMISSED',
 }
 
 const reviewsSchema = st.record({
