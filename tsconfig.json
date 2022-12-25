@@ -1,29 +1,8 @@
 {
+    "extends": "@tsconfig/node18-strictest",
     "compilerOptions": {
-        "target": "ES2020",
-        "lib": ["ES2020"],
-        "moduleResolution": "node",
-        "module": "CommonJS",
-
-        "baseUrl": ".",
         "outDir": "dist",
-        "rootDir": "src",
-        "sourceMap": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-
-        "strict": true,
-        "noImplicitAny": true,
-        "forceConsistentCasingInFileNames": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "strictBindCallApply": true,
-        "strictPropertyInitialization": true,
-        "noImplicitThis": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": false, // Too annoying
     },
     "include": [
         "src",

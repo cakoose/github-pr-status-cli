@@ -1,5 +1,3 @@
-import 'source-map-support/register';
-
 import * as jsYaml from 'js-yaml';
 import * as fs from 'fs';
 import * as os from 'os';

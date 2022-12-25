@@ -10,4 +10,4 @@ while [[ -h "$script_path" ]]; do
 done
 folder_path="$(cd -P "$(dirname "$script_path")" >/dev/null 2>&1 && pwd)"
 
-exec node -r "$folder_path/.pnp.cjs" "$folder_path/dist/main.js" "$@"
+exec node -r source-map-support/register -r "$folder_path/.pnp.cjs" "$folder_path/dist/main.js" "$@"

@@ -1,5 +1,4 @@
 export function runMain(mainAsync: (argv: Array<string>) => Promise<void>): void {
-    require('source-map-support/register');
     mainAsync(process.argv).catch(err => {
         if (err instanceof Exit) {
             console.error(err.message);
