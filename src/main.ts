@@ -135,5 +135,6 @@ function getProperty<K extends string, V>(r: Record<K, V>, k: K): V | undefined 
 }
 
 if (require.main === module) {
+    require('source-map-support').install();
     runMain(mainAsync);
 }
