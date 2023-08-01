@@ -17,4 +17,3 @@ export class Exit {
 export function q(s: string): string {
     return JSON.stringify(s);
 }
-
